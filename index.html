@@ -88,9 +88,18 @@
 </div>
 
 
+<!-- ▼ 単一番号検索ブロック（最上部に配置） -->
+<div style="margin-top:30px; margin-bottom:20px;">
+  <strong>単一番号検索</strong><br>
+  <input type="text" id="searchNum" 
+    placeholder="検索番号入力（例：3 8 15 22 30 43）"
+    style="width: 300px; font-size: 18px; padding: 6px;">
+  <button onclick="searchSingleNumber()">単一番号検索</button>
+</div>
+
 
 <h3 style="margin-top:30px; cursor:pointer;" onclick="togglePasteBox()">
-  ▼ 予想番号（貼り付け用BOXを開く）
+  ▼ 予想番号(複数予想番号一括用)（貼り付け用BOXを開く）
 </h3>
 
 <div id="pasteBox" style="display:none; margin-bottom:20px;">
@@ -98,19 +107,21 @@
   <textarea id="yosoAll" placeholder="例：
  3 12 18 22 31 42 
 10,14,21,26,33,41
-※カンマ区切り、６個以下でも判定可能"></textarea>
-  <br>
-  <button onclick="clearPasteBox()">貼り付け内容を削除</button>
- <button onclick="updateResults()">判定する</button>
-<button onclick="judgeAllRounds()">全回号で判定</button>
+※カンマ区切り、６個以下、単一番号でも判定可能です"
+  style="width:100%; max-width:650px; height:200px; font-size:20px;"></textarea>
 
-<button onclick="judgeSummaryAllRounds()">全回号の当選集計</button>
+  <!-- ▼ 複数番号判定ブロック（貼り付け窓と統合） -->
+  <div style="margin-top:10px;">
+    <strong>複数一括判定</strong><br>
+  <button onclick="judgeAllRounds()">全回号で判定</button>
+  <button onclick="judgeSummaryAllRounds()">全回号の当選集計</button>
+  <button onclick="clearPasteBox()">貼り付け内容を削除</button>
+  <button onclick="updateResults()">判定する</button>
+    <button onclick="resetAll()">ALLリセット</button>
+  </div>
 
 
 </div>
-
-
-
 
 
 <div id="resultArea"></div>
@@ -125,10 +136,10 @@ function togglePasteBox() {
 
   if (box.style.display === "none") {
     box.style.display = "block";
-    title.textContent = "▲ 予想番号（貼り付け用BOXを閉じる）";
+    title.textContent = "▲ 予想番号(複数予想番号一括用)（貼り付け用BOXを閉じる）";
   } else {
     box.style.display = "none";
-    title.textContent = "▼ 予想番号（貼り付け用BOXを開く）";
+    title.textContent = "▼ 予想番号(複数予想番号一括用)（貼り付け用BOXを開く）";
   }
 }
 
@@ -2522,6 +2533,10 @@ function resetAll() {
 
   // ★ 生データ貼り付け欄（これが残ってた）
   document.getElementById("rawData").value = "";
+
+  //単一番号検索欄
+  document.getElementById("searchNum").value = "";
+
 }
 
 function judgeAllRounds() {
@@ -2536,7 +2551,7 @@ function judgeAllRounds() {
   }
 
   let html = `
-    <h3>全回号での判定結果</h3>
+    <h3>全回号まとめ判定結果</h3>
     <table>
       <tr>
         <th>回号</th>
@@ -2555,24 +2570,34 @@ function judgeAllRounds() {
     lines.forEach(line => {
       const nums = parseNums(line);
 
-      const hitMain = nums.filter(n => main.includes(n)).length;
-      const hitBonus = nums.includes(bonus) ? 1 : 0;
+      const hitMain = nums.filter(n => main.includes(n));
+      const hitBonus = nums.includes(bonus) ? [bonus] : [];
 
+      // 🔴 ヒットした番号を赤色にする
+      const coloredNums = nums
+        .map(n => {
+          if (hitMain.includes(n)) return `<span style="color:red;">${n}</span>`;
+          if (hitBonus.includes(n)) return `<span style="color:orange;">${n}</span>`;
+          return n;
+        })
+        .join(" ");
+
+      // 判定
       let judge = "";
-      if (hitMain === 6) judge = "1等";
-      else if (hitMain === 5 && hitBonus === 1) judge = "2等";
-      else if (hitMain === 5) judge = "3等";
-      else if (hitMain === 4) judge = "4等";
-      else if (hitMain === 3) judge = "5等";
+      if (hitMain.length === 6) judge = "1等";
+      else if (hitMain.length === 5 && hitBonus.length === 1) judge = "2等";
+      else if (hitMain.length === 5) judge = "3等";
+      else if (hitMain.length === 4) judge = "4等";
+      else if (hitMain.length === 3) judge = "5等";
       else judge = "ハズレ";
 
       html += `
         <tr>
           <td>${item.kai}</td>
           <td>${item.date}</td>
-          <td>${line}</td>
-          <td>${hitMain}</td>
-          <td>${hitBonus}</td>
+          <td>${coloredNums}</td>
+          <td>${hitMain.length}</td>
+          <td>${hitBonus.length}</td>
           <td>${judge}</td>
         </tr>
       `;
@@ -2582,6 +2607,7 @@ function judgeAllRounds() {
   html += "</table>";
   document.getElementById("resultArea").innerHTML = html;
 }
+
 
 function judgeSummaryAllRounds() {
   const lines = document.getElementById("yosoAll").value
@@ -2665,6 +2691,66 @@ function loadByDate() {
   // ボーナス
   document.getElementById("lb").value = info.bonus;
 }
+
+function searchSingleNumber() {
+  const input = document.getElementById("searchNum").value.trim();
+  if (!input) {
+    alert("検索する番号を入力してください");
+    return;
+  }
+
+  // スペースまたはカンマ区切りで複数番号を取得
+  const nums = input.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n));
+
+  let html = `
+    <h3>単一番号検索結果</h3>
+    <table>
+      <tr>
+        <th>回号</th>
+        <th>日付</th>
+        <th>抽選番号</th>
+        <th>ボーナス</th>
+        <th>ヒット</th>
+      </tr>
+  `;
+
+  lotoData.forEach(item => {
+    const main = item.nums;
+    const bonus = item.bonus;
+
+    // 複数番号に対応した色付け
+    const coloredMain = main
+      .map(n => (nums.includes(n) ? `<span style="color:red;">${n}</span>` : n))
+      .join(" ");
+
+    const coloredBonus =
+      nums.includes(bonus) ? `<span style="color:orange;">${bonus}</span>` : bonus;
+
+    const hitCount = main.filter(n => nums.includes(n)).length;
+    const bonusHit = nums.includes(bonus) ? 1 : 0;
+
+    const hit =
+      hitCount > 0
+        ? `本数字${hitCount}個`
+        : bonusHit
+        ? "ボーナス"
+        : "なし";
+
+    html += `
+      <tr>
+        <td>${item.kai}</td>
+        <td>${item.date}</td>
+        <td>${coloredMain}</td>
+        <td>${coloredBonus}</td>
+        <td>${hit}</td>
+      </tr>
+    `;
+  });
+
+  html += "</table>";
+  document.getElementById("resultArea").innerHTML = html;
+}
+
 
   
 </script>
