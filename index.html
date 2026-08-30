@@ -181,10 +181,7 @@ function updateResults() {
     .split(/\n+/)
     .filter(line => line.trim() !== "");
 
-  // ★ 本数字ヒット数の集計
   const hitCount = [0, 0, 0, 0, 0, 0, 0];
-
-  // ★ ボーナスヒット総数（本数字ヒット数とは無関係）
   let bonusTotal = 0;
 
   let html = `
@@ -200,28 +197,34 @@ function updateResults() {
   lines.forEach((line) => {
     const nums = parseNums(line);
 
-    const hitMain = nums.filter(n => latestMain.includes(n)).length;
+    const hitMainNums = nums.filter(n => latestMain.includes(n));
     const hitBonus = nums.includes(latestBonus) ? 1 : 0;
 
-    // ★ 本数字ヒット数の集計
-    hitCount[hitMain]++;
-
-    // ★ ボーナスヒット総数
+    hitCount[hitMainNums.length]++;
     if (hitBonus === 1) bonusTotal++;
 
+    // 🔴 色付き表示を作成
+    const coloredNums = nums
+      .map(n => {
+        if (latestMain.includes(n)) return `<span style="color:red;">${n}</span>`;
+        if (n === latestBonus) return `<span style="color:orange;">${n}</span>`;
+        return n;
+      })
+      .join(" ");
+
     let judge = "";
-    if (hitMain === 6) judge = "1等";
-    else if (hitMain === 5 && hitBonus === 1) judge = "2等";
-    else if (hitMain === 5) judge = "3等";
-    else if (hitMain === 4) judge = "4等";
-    else if (hitMain === 3) judge = "5等";
+    if (hitMainNums.length === 6) judge = "1等";
+    else if (hitMainNums.length === 5 && hitBonus === 1) judge = "2等";
+    else if (hitMainNums.length === 5) judge = "3等";
+    else if (hitMainNums.length === 4) judge = "4等";
+    else if (hitMainNums.length === 3) judge = "5等";
     else judge = "ハズレ";
 
     html += `
       <tr>
-        <td>${line}</td>
+        <td>${coloredNums}</td>
         <td>${judge}</td>
-        <td>${hitMain}</td>
+        <td>${hitMainNums.length}</td>
         <td>${hitBonus}</td>
       </tr>
     `;
@@ -230,7 +233,7 @@ function updateResults() {
   html += "</table>";
   document.getElementById("resultArea").innerHTML = html;
 
-  // ★ 集計表（B列を右端に追加）
+  // 集計表
   let summary = `
     <table>
       <tr>
@@ -253,6 +256,7 @@ function updateResults() {
 
   document.getElementById("summaryArea").innerHTML = summary;
 }
+
 
 // ▼ ロト6データ
 const lotoData = [
@@ -2550,76 +2554,6 @@ function judgeAllRounds() {
     return;
   }
 
-  let html = `
-    <h3>全回号まとめ判定結果</h3>
-    <table>
-      <tr>
-        <th>回号</th>
-        <th>日付</th>
-        <th>予想番号</th>
-        <th>本数字ヒット</th>
-        <th>ボーナス</th>
-        <th>判定</th>
-      </tr>
-  `;
-
-  lotoData.forEach(item => {
-    const main = item.nums;
-    const bonus = item.bonus;
-
-    lines.forEach(line => {
-      const nums = parseNums(line);
-
-      const hitMain = nums.filter(n => main.includes(n));
-      const hitBonus = nums.includes(bonus) ? [bonus] : [];
-
-      // 🔴 ヒットした番号を赤色にする
-      const coloredNums = nums
-        .map(n => {
-          if (hitMain.includes(n)) return `<span style="color:red;">${n}</span>`;
-          if (hitBonus.includes(n)) return `<span style="color:orange;">${n}</span>`;
-          return n;
-        })
-        .join(" ");
-
-      // 判定
-      let judge = "";
-      if (hitMain.length === 6) judge = "1等";
-      else if (hitMain.length === 5 && hitBonus.length === 1) judge = "2等";
-      else if (hitMain.length === 5) judge = "3等";
-      else if (hitMain.length === 4) judge = "4等";
-      else if (hitMain.length === 3) judge = "5等";
-      else judge = "ハズレ";
-
-      html += `
-        <tr>
-          <td>${item.kai}</td>
-          <td>${item.date}</td>
-          <td>${coloredNums}</td>
-          <td>${hitMain.length}</td>
-          <td>${hitBonus.length}</td>
-          <td>${judge}</td>
-        </tr>
-      `;
-    });
-  });
-
-  html += "</table>";
-  document.getElementById("resultArea").innerHTML = html;
-}
-
-
-function judgeAllRounds() {
-  const lines = document.getElementById("yosoAll").value
-    .trim()
-    .split(/\n+/)
-    .filter(line => line.trim() !== "");
-
-  if (lines.length === 0) {
-    alert("予想番号を入力してください");
-    return;
-  }
-
   const latest = lotoData[lotoData.length - 1];
   const main = latest.nums;
   const bonus = latest.bonus;
@@ -2663,91 +2597,6 @@ function judgeAllRounds() {
         <td>${judge}</td>
         <td>${hitMain.length}</td>
         <td>${hitBonus}</td>
-      </tr>
-    `;
-  });
-
-  html += "</table>";
-  document.getElementById("resultArea").innerHTML = html;
-}
-
-
-function loadByDate() {
-  const date = document.getElementById("hiduke").value;
-  if (!date) return;
-
-  const info = lotoData.find(x => x.date === date);
-  if (!info) {
-    alert("この日付の抽選データはありません");
-    return;
-  }
-
-  // 回号反映（既存の回号呼び出し機能と同じ欄）
-  document.getElementById("kaisuu").value = info.kai;
-
-  // 本数字反映
-  document.getElementById("lm1").value = info.nums[0];
-  document.getElementById("lm2").value = info.nums[1];
-  document.getElementById("lm3").value = info.nums[2];
-  document.getElementById("lm4").value = info.nums[3];
-  document.getElementById("lm5").value = info.nums[4];
-  document.getElementById("lm6").value = info.nums[5];
-
-  // ボーナス
-  document.getElementById("lb").value = info.bonus;
-}
-
-function searchSingleNumber() {
-  const input = document.getElementById("searchNum").value.trim();
-  if (!input) {
-    alert("検索する番号を入力してください");
-    return;
-  }
-
-  // スペースまたはカンマ区切りで複数番号を取得
-  const nums = input.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n));
-
-  let html = `
-    <h3>単一番号検索結果</h3>
-    <table>
-      <tr>
-        <th>回号</th>
-        <th>日付</th>
-        <th>抽選番号</th>
-        <th>ボーナス</th>
-        <th>ヒット</th>
-      </tr>
-  `;
-
-  lotoData.forEach(item => {
-    const main = item.nums;
-    const bonus = item.bonus;
-
-    // 複数番号に対応した色付け
-    const coloredMain = main
-      .map(n => (nums.includes(n) ? `<span style="color:red;">${n}</span>` : n))
-      .join(" ");
-
-    const coloredBonus =
-      nums.includes(bonus) ? `<span style="color:orange;">${bonus}</span>` : bonus;
-
-    const hitCount = main.filter(n => nums.includes(n)).length;
-    const bonusHit = nums.includes(bonus) ? 1 : 0;
-
-    const hit =
-      hitCount > 0
-        ? `本数字${hitCount}個`
-        : bonusHit
-        ? "ボーナス"
-        : "なし";
-
-    html += `
-      <tr>
-        <td>${item.kai}</td>
-        <td>${item.date}</td>
-        <td>${coloredMain}</td>
-        <td>${coloredBonus}</td>
-        <td>${hit}</td>
       </tr>
     `;
   });
