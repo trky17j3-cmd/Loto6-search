@@ -37,6 +37,8 @@ button {
 
 
 
+
+
 </style>
 
 </head>
@@ -202,7 +204,7 @@ function updateResults() {
   lines.forEach((line) => {
     const nums = parseNums(line);
 
-      // ★ 重複チェック
+  // ★ 重複チェック
   if (nums.length !== new Set(nums).size) {
     alert(`重複数字があります: ${line}`);
     return; // この行の判定をスキップ
@@ -279,7 +281,6 @@ function updateResults() {
 
   document.getElementById("summaryArea").innerHTML = summary;
 }
-
 
 // ▼ ロト6データ
 const lotoData = [
@@ -2417,7 +2418,7 @@ const lotoData = [
   { kai: 1, date: "2000-10-05", nums: [2,8,10,13,27,30], bonus: 39 },
 ];
 
-    // ▼ 抽選データチェック
+  // ▼ 抽選データチェック
   lotoData.forEach(info => {
     const nums = info.nums;
 
@@ -2433,7 +2434,7 @@ const lotoData = [
       alert(`数字が6個ではありません（回号: ${info.kai}）`);
     }
   });
-  
+
 // ▼ ページ読み込み時に回号を追加
 window.addEventListener("DOMContentLoaded", () => {
   const sel = document.getElementById("kaisuu");
@@ -2447,6 +2448,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // ▼ 回号選択でデータ反映
 function loadLotoData() {
+
+
   const kai = document.getElementById("kaisuu").value;
   const info = lotoData.find(x => x.kai == kai);
   if (!info) return;
@@ -2490,7 +2493,7 @@ function loadByDate() {
   document.getElementById("lb").value = info.bonus;
 }
 
-  
+
 function convertRawToLotoData(rawText) {
   const lines = rawText.trim().split(/\n+/);
   const result = [];
@@ -2622,49 +2625,123 @@ function judgeAllRounds() {
     return;
   }
 
-  const latest = lotoData[lotoData.length - 1];
-  const main = latest.nums;
-  const bonus = latest.bonus;
-
   let html = `
-    <h3>複数一括判定</h3>
+    <h3>全回号で判定</h3>
     <table>
       <tr>
+        <th>回号</th>
+        <th>日付</th>
         <th>予想番号</th>
-        <th>当選判定</th>
         <th>本数字ヒット</th>
         <th>ボーナスヒット</th>
+        <th>当選判定</th>
       </tr>
   `;
 
-  lines.forEach(line => {
-    const nums = line.split(/[\s,]+/).map(n => parseInt(n)).filter(n => !isNaN(n));
+  // ★ 全回号をループして判定
+  lotoData.forEach(item => {
+    const main = item.nums;
+    const bonus = item.bonus;
 
-    const hitMain  = nums.filter(n => main.includes(n));
-    const hitBonus = nums.includes(bonus) ? 1 : 0;
+    lines.forEach(line => {
+      const nums = parseNums(line);
 
-    const coloredNums = nums
+      const hitMain = nums.filter(n => main.includes(n));
+      const hitBonus = nums.includes(bonus) ? 1 : 0;
+
+      const coloredNums = nums
+        .map(n => {
+          if (main.includes(n)) return `<span style="color:red;">${n}</span>`;
+          if (n === bonus) return `<span style="color:orange;">${n}</span>`;
+          return n;
+        })
+        .join(" ");
+
+      let judge = "";
+      if (hitMain.length === 6) judge = "1等";
+      else if (hitMain.length === 5 && hitBonus === 1) judge = "2等";
+      else if (hitMain.length === 5) judge = "3等";
+      else if (hitMain.length === 4) judge = "4等";
+      else if (hitMain.length === 3) judge = "5等";
+      else judge = "ハズレ";
+
+      html += `
+        <tr>
+          <td>${item.kai}</td>
+          <td>${item.date}</td>
+          <td>${coloredNums}</td>
+          <td>${hitMain.length}</td>
+          <td>${hitBonus}</td>
+          <td>${judge}</td>
+        </tr>
+      `;
+    });
+  });
+
+  html += "</table>";
+  document.getElementById("resultArea").innerHTML = html;
+}
+
+
+
+
+
+function searchSingleNumber() {
+  const nums = document.getElementById("searchNum").value
+    .trim()
+    .split(/[\s,]+/)
+    .map(n => parseInt(n, 10))
+    .filter(n => !isNaN(n));
+
+  if (nums.length === 0) {
+    alert("検索する番号を入力してください");
+    return;
+  }
+
+  let html = `
+    <h3>単一番号検索結果</h3>
+    <table>
+      <tr>
+        <th>回号</th>
+        <th>日付</th>
+        <th>抽選番号</th>
+        <th>ボーナス</th>
+        <th>ヒット</th>
+      </tr>
+  `;
+
+  lotoData.forEach(item => {
+    const main = item.nums;
+    const bonus = item.bonus;
+
+    // 本数字の色付け
+    const coloredMain = main
       .map(n => {
-        if (main.includes(n)) return `<span style="color:red;">${n}</span>`;
-        if (n === bonus)      return `<span style="color:orange;">${n}</span>`;
-        return n;
+        if (nums.includes(n)) return `<span style="color:red;">${n}</span>`;
+        return `${n}`;
       })
       .join(" ");
 
-    let judge = "";
-    if (hitMain.length === 6) judge = "1等";
-    else if (hitMain.length === 5 && hitBonus === 1) judge = "2等";
-    else if (hitMain.length === 5) judge = "3等";
-    else if (hitMain.length === 4) judge = "4等";
-    else if (hitMain.length === 3) judge = "5等";
-    else judge = "ハズレ";
+    // ボーナスの色付け
+    const coloredBonus =
+      nums.includes(bonus) ? `<span style="color:orange;">${bonus}</span>` : `${bonus}`;
+
+    // ヒット判定
+    const hitMain = main.filter(n => nums.includes(n));
+    const hitBonus = nums.includes(bonus);
+
+    let hit = "なし";
+    if (hitMain.length > 0 && hitBonus) hit = "本数字＋ボーナス";
+    else if (hitMain.length > 0) hit = "本数字";
+    else if (hitBonus) hit = "ボーナス";
 
     html += `
       <tr>
-        <td>${coloredNums}</td>
-        <td>${judge}</td>
-        <td>${hitMain.length}</td>
-        <td>${hitBonus}</td>
+        <td>${item.kai}</td>
+        <td>${item.date}</td>
+        <td>${coloredMain}</td>
+        <td>${coloredBonus}</td>
+        <td>${hit}</td>
       </tr>
     `;
   });
@@ -2673,6 +2750,67 @@ function judgeAllRounds() {
   document.getElementById("resultArea").innerHTML = html;
 }
 
+function judgeSummaryAllRounds() {
+  const lines = document.getElementById("yosoAll").value
+    .trim()
+    .split(/\n+/)
+    .filter(line => line.trim() !== "");
+
+  if (lines.length === 0) {
+    alert("予想番号を入力してください");
+    return;
+  }
+
+  let html = `
+    <h3>全回号の当選集計</h3>
+    <table>
+      <tr>
+        <th>予想番号</th>
+        <th>1等</th>
+        <th>2等</th>
+        <th>3等</th>
+        <th>4等</th>
+        <th>5等</th>
+        <th>ハズレ</th>
+      </tr>
+  `;
+
+  lines.forEach(line => {
+    const nums = parseNums(line);
+
+    let count1 = 0, count2 = 0, count3 = 0, count4 = 0, count5 = 0, countMiss = 0;
+
+    lotoData.forEach(item => {
+      const main = item.nums;
+      const bonus = item.bonus;
+
+      const hitMain = nums.filter(n => main.includes(n)).length;
+      const hitBonus = nums.includes(bonus) ? 1 : 0;
+
+      if (hitMain === 6) count1++;
+      else if (hitMain === 5 && hitBonus === 1) count2++;
+      else if (hitMain === 5) count3++;
+      else if (hitMain === 4) count4++;
+      else if (hitMain === 3) count5++;
+      else countMiss++;
+    });
+
+    html += `
+      <tr>
+        <td>${line}</td>
+        <td>${count1}</td>
+        <td>${count2}</td>
+        <td>${count3}</td>
+        <td>${count4}</td>
+        <td>${count5}</td>
+        <td>${countMiss}</td>
+      </tr>
+    `;
+  });
+
+  html += "</table>";
+  document.getElementById("resultArea").innerHTML = html;
+}
 
   
 </script>
