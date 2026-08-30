@@ -202,6 +202,24 @@ function updateResults() {
   lines.forEach((line) => {
     const nums = parseNums(line);
 
+      // ★ 重複チェック
+  if (nums.length !== new Set(nums).size) {
+    alert(`重複数字があります: ${line}`);
+    return; // この行の判定をスキップ
+  }
+
+  // ★ 数字の範囲チェック
+  if (nums.some(n => n < 1 || n > 43)) {
+    alert(`1〜43の範囲外の数字があります: ${line}`);
+    return;
+  }
+
+  // ★ 数字の個数チェック
+  if (nums.length !== 6) {
+    alert(`数字が6個ではありません: ${line}`);
+    return;
+  }
+
     const hitMainNums = nums.filter(n => latestMain.includes(n));
     const hitBonus = nums.includes(latestBonus) ? 1 : 0;
 
