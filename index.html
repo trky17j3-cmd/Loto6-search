@@ -2428,6 +2428,34 @@ function loadLotoData() {
   document.getElementById("lb").value = info.bonus;
 }
 
+function loadByDate() {
+  const date = document.getElementById("hiduke").value;
+  if (!date) return;
+
+  // 日付一致データを検索
+  const info = lotoData.find(x => x.date === date);
+
+  if (!info) {
+    alert("この日付の抽選データはありません");
+    return;
+  }
+
+  // 回号を反映
+  document.getElementById("kaisuu").value = info.kai;
+
+  // 本数字を反映
+  document.getElementById("lm1").value = info.nums[0];
+  document.getElementById("lm2").value = info.nums[1];
+  document.getElementById("lm3").value = info.nums[2];
+  document.getElementById("lm4").value = info.nums[3];
+  document.getElementById("lm5").value = info.nums[4];
+  document.getElementById("lm6").value = info.nums[5];
+
+  // ボーナス
+  document.getElementById("lb").value = info.bonus;
+}
+
+  
 function convertRawToLotoData(rawText) {
   const lines = rawText.trim().split(/\n+/);
   const result = [];
