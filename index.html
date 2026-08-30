@@ -2417,6 +2417,23 @@ const lotoData = [
   { kai: 1, date: "2000-10-05", nums: [2,8,10,13,27,30], bonus: 39 },
 ];
 
+    // ▼ 抽選データチェック
+  lotoData.forEach(info => {
+    const nums = info.nums;
+
+    if (nums.length !== new Set(nums).size) {
+      alert(`重複数字があります（回号: ${info.kai}）`);
+    }
+
+    if (nums.some(n => n < 1 || n > 43)) {
+      alert(`1〜43の範囲外の数字があります（回号: ${info.kai}）`);
+    }
+
+    if (nums.length !== 6) {
+      alert(`数字が6個ではありません（回号: ${info.kai}）`);
+    }
+  });
+  
 // ▼ ページ読み込み時に回号を追加
 window.addEventListener("DOMContentLoaded", () => {
   const sel = document.getElementById("kaisuu");
