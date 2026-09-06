@@ -51,6 +51,7 @@ button {
 
 
 <h3>最新抽選番号</h3>
+<p id="latestInfo"></p>
 
 <div style="margin-top:10px; margin-bottom:20px; font-size:16px;">
 第 
@@ -2813,6 +2814,26 @@ function judgeSummaryAllRounds() {
   html += "</table>";
   document.getElementById("resultArea").innerHTML = html;
 }
+
+  function showLatestInfo() {
+  if (!lotoData || lotoData.length === 0) return;
+
+  const latest = lotoData[0]; // 一番上が最新回
+  const kai = latest.kai;
+  const date = latest.date;
+
+  // 曜日を取得
+  const d = new Date(date);
+  const weekday = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+
+  document.getElementById("latestInfo").innerHTML =
+    `データ反映済み最新回：第${kai}回 (${date}(${weekday}))`;
+}
+
+// ページ読み込み時に表示
+window.onload = function() {
+  showLatestInfo();
+};
 
   
 </script>
