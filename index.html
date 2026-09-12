@@ -2689,9 +2689,6 @@ function judgeAllRounds() {
 }
 
 
-
-
-
 function searchSingleNumber() {
   const nums = document.getElementById("searchNum").value
     .trim()
@@ -2732,14 +2729,20 @@ function searchSingleNumber() {
     const coloredBonus =
       nums.includes(bonus) ? `<span style="color:orange;">${bonus}</span>` : `${bonus}`;
 
-    // ヒット判定
-    const hitMain = main.filter(n => nums.includes(n));
-    const hitBonus = nums.includes(bonus);
+// ヒット判定（本数字の数＋ボーナスの有無）
+const hitMain = main.filter(n => nums.includes(n));
+const hitBonus = nums.includes(bonus);
 
-    let hit = "なし";
-    if (hitMain.length > 0 && hitBonus) hit = "本数字＋ボーナス";
-    else if (hitMain.length > 0) hit = "本数字";
-    else if (hitBonus) hit = "ボーナス";
+// 新しいヒット表示
+let hitText = "";
+if (hitMain.length === 0 && !hitBonus) {
+  hitText = "なし";
+} else if (hitBonus) {
+  hitText = `本数字：${hitMain.length}個＋ボーナス`;
+} else {
+  hitText = `本数字：${hitMain.length}個`;
+}
+
 
     html += `
       <tr>
@@ -2747,7 +2750,8 @@ function searchSingleNumber() {
         <td>${item.date}</td>
         <td>${coloredMain}</td>
         <td>${coloredBonus}</td>
-        <td>${hit}</td>
+        <td>${hitText}</td>
+
       </tr>
     `;
   });
@@ -2755,6 +2759,7 @@ function searchSingleNumber() {
   html += "</table>";
   document.getElementById("resultArea").innerHTML = html;
 }
+
 
 function judgeSummaryAllRounds() {
   const lines = document.getElementById("yosoAll").value
